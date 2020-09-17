@@ -1,21 +1,21 @@
 # Steps:
 
 1. Create a S3 bucket in the same region where you want to run the script.
-Let's say you named the bucket: demo-cfn-infra-resources
+Let's say you named the bucket: crafting-cloud-formation
 
 2. Run the Following commands one by one
 
 aws cloudformation package \
 --template-file cloudformation-template.sam.yaml \
---s3-bucket demo-cfn-infra-resources \
+--s3-bucket crafting-cloud-formation \
 --output-template-file .cloudformation-template.yaml
 
 aws cloudformation deploy \
 --template-file .cloudformation-template.yaml \
 --capabilities CAPABILITY_NAMED_IAM \
---stack-name gourav-bootstrap-stack-dev \
+--stack-name water-meter-python-backend-dev \
 --parameter-overrides  \
-Environment=dev ServiceName=gourav-bootstrap-stack DynamoDBTableName=dev-gourav-dynamo-table
+Environment=dev ServiceName=water-meter-python-backend DynamoDBTableName=dev-water-meter
 
 3. Go to AWS Cloudformation in your region to see the progress.
 
