@@ -27,16 +27,386 @@ Resources:
     Properties:
       TableName: !Sub "${Environment}-${ServiceName}"
       AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: typeId
-          AttributeType: S
+        - AttributeName: "device_id"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N"
+        - AttributeName: "project"
+          AttributeType: "S" 
       KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: typeId
-          KeyType: RANGE
+        - AttributeName: "device_id"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"      
+      BillingMode: PAY_PER_REQUEST 
+  DynamoTable1:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "project_wing_device_data"
+      AttributeDefinitions:
+        - AttributeName: "wing"
+          AttributeType: "S"
+        - AttributeName: "flat"
+          AttributeType: "S"
+        - AttributeName: "project"
+          AttributeType: "S"  
+      KeySchema:
+        - AttributeName: "wing"
+          KeyType: "HASH"
+        - AttributeName: "flat"
+          KeyType: "RANGE"  
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_wing_device_data_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"        
+      BillingMode: PAY_PER_REQUEST     
+  DynamoTable2:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "meter_card"
+      AttributeDefinitions:
+        - AttributeName: "project"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "project"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST 
+  DynamoTable3:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "sprinkler_data"
+      AttributeDefinitions:
+        - AttributeName: "area"
+          AttributeType: "S"
+        - AttributeName: "sprinkler_id"
+          AttributeType: "S" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "area"
+          KeyType: "HASH"
+        - AttributeName: "sprinkler_id"
+          KeyType: "RANGE" 
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_sprinkler_data_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST    
+  DynamoTable4:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "sprinkler_consumption"
+      AttributeDefinitions:
+        - AttributeName: "sprinkler_id"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "sprinkler_id"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"  
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_sprinkler_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"    
+      BillingMode: PAY_PER_REQUEST 
+  DynamoTable5:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "boom_barrier_info"
+      AttributeDefinitions:
+        - AttributeName: "flat"
+          AttributeType: "S"
+        - AttributeName: "vehicle_no"
+          AttributeType: "S" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "flat"
+          KeyType: "HASH"
+        - AttributeName: "vehicle_no"
+          KeyType: "RANGE"  
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_boom_barrier_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"    
+      BillingMode: PAY_PER_REQUEST 
+  DynamoTable6:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "boom_barrier_data"
+      AttributeDefinitions:
+        - AttributeName: "rfid"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "rfid"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE" 
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_rfid_by_project_timestamp"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+            - 
+              AttributeName: "timestamp"
+              KeyType: "RANGE"  
+          Projection: 
+            ProjectionType: "ALL"        
+      BillingMode: PAY_PER_REQUEST  
+  DynamoTable7:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "amenities_info"
+      AttributeDefinitions:
+        - AttributeName: "project"
+          AttributeType: "S"
+        - AttributeName: "amenities"
+          AttributeType: "S"  
+      KeySchema:
+        - AttributeName: "project"
+          KeyType: "HASH"
+        - AttributeName: "amenities"
+          KeyType: "RANGE"   
       BillingMode: PAY_PER_REQUEST
+  DynamoTable8:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "amenities_flat_info"
+      AttributeDefinitions:
+        - AttributeName: "flat"
+          AttributeType: "S"
+        - AttributeName: "access_card_id"
+          AttributeType: "S" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "flat"
+          KeyType: "HASH"
+        - AttributeName: "access_card_id"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_access_flat_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST  
+  DynamoTable9:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "amenities_data"
+      AttributeDefinitions:
+        - AttributeName: "access_id"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N" 
+        - AttributeName: "amenity"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "access_id"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_access_data_project"
+          KeySchema: 
+            - 
+              AttributeName: "amenity"
+              KeyType: "HASH"
+            - 
+              AttributeName: "timestamp"
+              KeyType: "RANGE"  
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST
+  DynamoTable10:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "billings"
+      AttributeDefinitions:
+        - AttributeName: "wing"
+          AttributeType: "S"
+        - AttributeName: "flat"
+          AttributeType: "S" 
+        - AttributeName: "project"
+          AttributeType: "S"   
+      KeySchema:
+        - AttributeName: "wing"
+          KeyType: "HASH"
+        - AttributeName: "flat"
+          KeyType: "RANGE"  
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_billing_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"    
+      BillingMode: PAY_PER_REQUEST
+  DynamoTable11:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "billing_date"
+      AttributeDefinitions:
+        - AttributeName: "project"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "project"
+          KeyType: "HASH"
+      BillingMode: PAY_PER_REQUEST
+  DynamoTable12:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "light_data"
+      AttributeDefinitions:
+        - AttributeName: "Area"
+          AttributeType: "S"
+        - AttributeName: "light_id"
+          AttributeType: "S"
+        - AttributeName: "project"
+          AttributeType: "S"    
+      KeySchema:
+        - AttributeName: "Area"
+          KeyType: "HASH"
+        - AttributeName: "light_id"
+          KeyType: "RANGE" 
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_light_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST     
+  DynamoTable13:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "tickets"
+      AttributeDefinitions:
+        - AttributeName: "flat"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N"
+        - AttributeName: "project"
+          AttributeType: "S"
+        - AttributeName: "statuss"
+          AttributeType: "S"      
+      KeySchema:
+        - AttributeName: "flat"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE" 
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_helpdesk_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+            - 
+              AttributeName: "statuss"
+              KeyType: "RANGE"  
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST
+  DynamoTable14:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "device_alerts"
+      AttributeDefinitions:
+        - AttributeName: "device_id"
+          AttributeType: "S"
+        - AttributeName: "project"
+          AttributeType: "S"     
+      KeySchema:
+        - AttributeName: "device_id"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_device_alert_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST
+  DynamoTable15:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "service_alerts"
+      AttributeDefinitions:
+        - AttributeName: "device_id"
+          AttributeType: "S"
+        - AttributeName: "timestamp"
+          AttributeType: "N"
+        - AttributeName: "project"
+          AttributeType: "S"       
+      KeySchema:
+        - AttributeName: "device_id"
+          KeyType: "HASH"
+        - AttributeName: "timestamp"
+          KeyType: "RANGE"  
+      GlobalSecondaryIndexes:
+        - 
+          IndexName: "query_service_alert_project"
+          KeySchema: 
+            - 
+              AttributeName: "project"
+              KeyType: "HASH"
+            - 
+              AttributeName: "timestamp"
+              KeyType: "RANGE"  
+          Projection: 
+            ProjectionType: "ALL"       
+      BillingMode: PAY_PER_REQUEST        
   MyApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -158,6 +528,100 @@ Resources:
                 httpMethod: "POST"
                 credentials: !GetAtt "ApiIAMRole.Arn"
                 type: "AWS_PROXY"
+          /app:
+            options:
+              summary: CORS support
+              description: |
+                Enable CORS by returning correct headers
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              tags:
+                - CORS
+              security:
+                - NONE: []
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: |
+                    {
+                      "statusCode" : 200
+                    }
+                responses:
+                  "default":
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-amz-security-token'"
+                      method.response.header.Access-Control-Allow-Methods: "'*'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                    responseTemplates:
+                      application/json: |
+                        {}
+              responses:
+                "200":
+                  description: Default response for CORS method
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Origin:
+                      type: "string"
+            get:
+              produces:
+                - "application/json"
+              responses:
+                "200":
+                  description: Default response for CORS method
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Origin:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+                  - lambdaArn: !GetAtt "LambdaFunction.Arn"
+                responses:
+                  "default":
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-amz-security-token'"
+                      method.response.header.Access-Control-Allow-Methods: "'*'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                httpMethod: "POST"
+                credentials: !GetAtt "ApiIAMRole.Arn"
+                type: "AWS_PROXY"
+            post:
+              produces:
+                - "application/json"
+              responses:
+                "200":
+                  description: Default response for CORS method
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Origin:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+                  - lambdaArn: !GetAtt "LambdaFunction.Arn"
+                responses:
+                  "default":
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-amz-security-token'"
+                      method.response.header.Access-Control-Allow-Methods: "'*'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                httpMethod: "POST"
+                credentials: !GetAtt "ApiIAMRole.Arn"
+                type: "AWS_PROXY"               
   ApiGatewayInvokeLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -193,7 +657,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       Timeout: 60
       CodeUri: .
-      Runtime: "python3.8"
+      Runtime: "python3.7"
       Environment:
         Variables:
           SAMPLE_ENV_VARIABLE_NAME: !Ref SampleEnvVariableName
@@ -233,14 +697,10 @@ Resources:
                 Resource: "*"
               - Effect: Allow
                 Action:
+                    - s3:GetObject
+                    - s3:PutObject
                     - s3:ListBucket
-                    - s3:GetObject*
-                Resource: "arn:aws:s3:::SomeBucket/*"
-              - Effect: Allow
-                Action:
-                  - s3:ListBucket
-                  - s3:GetObject*
-                Resource: "arn:aws:s3:::SomeBucket/*"
+                Resource: "arn:aws:s3:::crafting-cloud-formation/*"
               - Effect: Allow
                 Action:
                   - dynamodb:BatchGetItem
@@ -251,7 +711,204 @@ Resources:
                   - dynamodb:Query
                   - dynamodb:UpdateItem
                   - dynamodb:DescribeTable
-                Resource: !GetAtt DynamoTable.Arn
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable.Arn, !Join [ '/',[!GetAtt DynamoTable.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable1.Arn, !Join [ '/',[!GetAtt DynamoTable1.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable2.Arn]  
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable4.Arn, !Join [ '/',[!GetAtt DynamoTable4.Arn,index/*]]]
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable5.Arn, !Join [ '/',[!GetAtt DynamoTable5.Arn,index/*]]]    
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable3.Arn, !Join [ '/',[!GetAtt DynamoTable3.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable6.Arn, !Join [ '/',[!GetAtt DynamoTable6.Arn,index/*]]]
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable7.Arn] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable8.Arn, !Join [ '/',[!GetAtt DynamoTable8.Arn,index/*]]]
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable9.Arn, !Join [ '/',[!GetAtt DynamoTable9.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable10.Arn, !Join [ '/',[!GetAtt DynamoTable10.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable11.Arn]
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable12.Arn, !Join [ '/',[!GetAtt DynamoTable12.Arn,index/*]]]
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable13.Arn, !Join [ '/',[!GetAtt DynamoTable13.Arn,index/*]]] 
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable14.Arn, !Join [ '/',[!GetAtt DynamoTable14.Arn,index/*]]]  
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                  - dynamodb:GetRecords
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                Resource: [!GetAtt DynamoTable15.Arn, !Join [ '/',[!GetAtt DynamoTable15.Arn,index/*]]]                  
               - Effect: Allow
                 Action:
                   - "sqs:SendMessage"
@@ -346,7 +1003,7 @@ Resources:
                   - 's3:*'
                 Resource: !Join [
                   "", [
-                  "arn:aws:s3:::SomeBucket:",
+                  "arn:aws:s3:::crafting-cloud-formation",
                   "/private/",
                   "$",
                   "{cognito-identity.amazonaws.com:sub}/*"
