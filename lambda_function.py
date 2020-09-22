@@ -9,6 +9,7 @@ import botocore
 import calendar
 from json import dumps
 from fpdf import FPDF
+import paho.mqtt.client as paho
 # Design get and post methods for all six services to show data
 # from db and post data to db from sensor endpoints 
 # Post request will have IAM roles None in API gateway
@@ -457,7 +458,7 @@ def monthly_water_usage(event):
             month_usage["K"] = month_usage["K"] + int(eval(json.dumps(i,cls=DecimalEncoder))["consumption"])
         elif a[:4]==year and a[5:7]==month and eval(json.dumps(i,cls=DecimalEncoder))["device_id"][-1]=="B":
             month_usage["B"] = month_usage["B"] + int(eval(json.dumps(i,cls=DecimalEncoder))["consumption"])
-        elif a[:4]==year and a[5:7]==month and eval(json.dumps(i,cls=DecimalEncoder))["device_id"][-1]=="B":
+        elif a[:4]==year and a[5:7]==month and eval(json.dumps(i,cls=DecimalEncoder))["device_id"][-1]=="M":
             month_usage["M"] = month_usage["M"] + int(eval(json.dumps(i,cls=DecimalEncoder))["consumption"])
         elif a[:4]==prev_month_year and a[5:7]==prev_month:
             overall_prev_month_usage = overall_prev_month_usage + int(eval(json.dumps(i,cls=DecimalEncoder))["consumption"])
@@ -2755,8 +2756,168 @@ def bill_api_with_minimum_v3(event):
     results['results'].append(t['results'])
     return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}    
 
+
+def water_meter_consumption_forecast_user(event):
+    now  = datetime.now() + timedelta(minutes=330)
+    end = now - timedelta(days=30)
+    wing = event['queryStringParameters']['wing']
+    flat = event['queryStringParameters']['flat']
+    end_month = now.month
+    end_day = now.day
+    start_month = end.month
+    start_day = end.day
+    if start_month<10:
+        start_month = '0'+str(start_month)
+    else:
+        start_month = str(start_month)
+    if start_day<10:
+        start_day = '0'+str(start_day)
+    else:
+        start_day = str(start_day)
+    if end_month<10:
+        end_month = '0'+str(end_month)
+    else:
+        end_month = str(end_month)
+    if end_day<10:
+        end_day = '0'+str(end_day)
+    else:
+        end_day = str(end_day)    
+    start_date = str(now.year)+'-'+start_month+'-'+start_day
+    end_date = str(end.year)+'-'+end_month+'-'+end_day
+    r = requests.get(url = 'https://jwodtc0y96.execute-api.ap-south-1.amazonaws.com/dev/app',params = {'start_date':start_date,'end_date':end_date,'function':'water-meter-reports-app','wing':wing,'flat':flat})
+    results = r.json()
+    consumption_array = results['TableData']
+    consumption_spent_day = 0
+    count = 0
+    results = {}
+    for i in consumption_array:
+        if i[1]!=0:
+            count  = count + 1 
+            consumption_spent_day = consumption_spent_day+ i[1]
+    consumption_spent_day = int(consumption_spent_day/count)
+    if consumption_array[30][1]==0 and consumption_array[29][1]!=0:
+        results['consumption_forecast_result'] = 'Your forecast usage for tomorrow is expected to be less than {} Litres of water'.format(consumption_spent_day)
+    elif consumption_array[30][1]!=0:
+        results['consumption_forecast_result'] = 'Your Forecast usage for tomorrow is expected to be around {} Litres of water'.format(consumption_spent_day)
+    elif consumption_array[30][1]+consumption_array[29][1]+consumption_array[28][1]+consumption_array[27][1]+consumption_array[26][1] == 0:
+        results['consumption_forecast_result'] = 'Your Forecast usage for tomorrow is expected to be either 0 or {} Litres of water'.format(consumption_spent_day)
+    return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}   
     
     
+def water_meter_consumption_forecast_project(event):
+    result = {}
+    project = event['queryStringParameters']['project']
+    r = requests.get(url = 'https://jwodtc0y96.execute-api.ap-south-1.amazonaws.com/dev/resume',params = {'function':'month-graph','project':project})
+    results = r.json()
+    consumption_spent_day = 0
+    for keys,values in results.items():
+        consumption_spent_day = consumption_spent_day + int(values/1000)
+    consumption_spent_day = int(consumption_spent_day/30)
+    if results['1']==0 and results['2']!=0:
+        result['Forecast Consumption_result'] = 'Your forecast usage for tomorrow is expected to be less than {} Litres of water'.format(consumption_spent_day)
+    elif results['1']!=0:
+        result['Forecast Consumption_result'] = 'Your forecast usage for tomorrow is expected to be around {} Litres of water'.format(consumption_spent_day)    
+    elif results['1'] + results['2'] + results['3'] + results['4'] == 0:
+        result['Forecast Consumption'] = 'Your forecast usage for tomorrow is expected to be 0 Litres of water'.format(consumption_spent_day)
+    return {'statusCode':200,'body':json.dumps(result),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+
+def bills_forecast_user(event):
+    now  = datetime.now() + timedelta(minutes=330)
+    last_3_months_bills = []
+    wing  = event['queryStringParameters']['wing']
+    flat = event['queryStringParameters']['flat']
+    current_month = now.month
+    current_year = now.year
+    # Creating structure to get past 3 months and years data from the current datetime to form query in billings table 
+    if current_month>3 and current_month<11:
+        months_and_year = [['0'+str(current_month-1),str(current_year)],['0'+str(current_month-2),str(current_year)],['0'+str(current_month-3),str(current_year)]]
+    elif current_month==1:
+        months_and_year = [['12',str(current_year-1)],['11',str(current_year-1)],['10',str(current_year-1)]]
+    elif current_month==2:
+        months_and_year = [['01',str(current_year)],['12',str(current_year-1)],['11',str(current_year-1)]]
+    elif current_month==3:
+        months_and_year = [['02',str(current_year)],['01',str(current_year)],['12',str(current_year-1)]]
+    elif current_month==11:
+        months_and_year = [['10',str(current_year)],['09',str(current_year)],['08',str(current_year)]]
+    elif current_month==12:
+        months_and_year = [['11',str(current_year)],['10',str(current_year)],['09',str(current_year)]]
+    for i in range(3):
+        flat = flat + '-'+str(months_and_year[i][0]) +'-'+str(months_and_year[i][1])
+        dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
+        table = dynamodb.Table('billings')
+        response = table.query(KeyConditionExpression=Key('wing').eq(wing) & Key('flat').eq(flat))
+        for j in response['Items']:
+            last_3_months_bills.append(int(eval(json.dumps(j,cls=DecimalEncoder))["amount"]))
+    if len(last_3_months_bills)<2:
+        results = {'bill-forecast-result': 'Enogh data not found for this user to forecast'}
+    else:
+        average_bill = round(sum(last_3_months_bills)/len(last_3_months_bills))
+        results = {'bill-forecast-result': 'Your forecast bill for current month is Rs.{}'.format(average_bill)}
+    return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+def demo_publish(event):
+    status  = event['queryStringParameters']['status']
+    # Your broker address 
+    broker="18.218.171.32"
+    # default port for broker to listen to incoming messages can be configured in MQTT settings.
+    port=1883
+    def on_publish(client,userdata,result):
+        print("data published \n")
+        pass
+    try:
+        client1= paho.Client("Zenlightin")  
+        client1.on_publish = on_publish
+    except Exception as e:
+        print(str(e))
+    # connection with the mqtt broker address
+    client1.connect(broker,port)
+    # Publish the message using the client 
+    ret= client1.publish("Zenlightin",str(status))
+    return {'statusCode':200,'body':json.dumps('data published'),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+
+def bills_forecast_project(event):
+    now  = datetime.now() + timedelta(minutes=330)
+    project = event['queryStringParameters']['project']
+    total_bill_for_last_3_months = [0,0,0]
+    current_month = now.month
+    current_year = now.year
+    # Creating structure to get past 3 months and years data from the current datetime to form query in billings table 
+    if current_month>3 and current_month<11:
+        months_and_year = [['0'+str(current_month-1),str(current_year)],['0'+str(current_month-2),str(current_year)],['0'+str(current_month-3),str(current_year)]]
+    elif current_month==1:
+        months_and_year = [['12',str(current_year-1)],['11',str(current_year-1)],['10',str(current_year-1)]]
+    elif current_month==2:
+        months_and_year = [['01',str(current_year)],['12',str(current_year-1)],['11',str(current_year-1)]]
+    elif current_month==3:
+        months_and_year = [['02',str(current_year)],['01',str(current_year)],['12',str(current_year-1)]]
+    elif current_month==11:
+        months_and_year = [['10',str(current_year)],['09',str(current_year)],['08',str(current_year)]]
+    elif current_month==12:
+        months_and_year = [['11',str(current_year)],['10',str(current_year)],['09',str(current_year)]]
+    dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
+    table = dynamodb.Table('billings')
+    resp = table.query(
+    # Add the name of the index you want to use in your query
+    IndexName='query_billing_project',
+    KeyConditionExpression=Key('project').eq(project),)  
+    for i in resp['Items']:
+        if str(eval(json.dumps(i,cls=DecimalEncoder))["month"])==months_and_year[0][0] and str(eval(json.dumps(i,cls=DecimalEncoder))["year"])==months_and_year[0][1]:
+            total_bill_for_last_3_months[0] += int(eval(json.dumps(i,cls=DecimalEncoder))["amount"])
+        elif str(eval(json.dumps(i,cls=DecimalEncoder))["month"])==months_and_year[1][0] and str(eval(json.dumps(i,cls=DecimalEncoder))["year"])==months_and_year[1][1]:
+            total_bill_for_last_3_months[1] += int(eval(json.dumps(i,cls=DecimalEncoder))["amount"])
+        elif str(eval(json.dumps(i,cls=DecimalEncoder))["month"])==months_and_year[2][0] and str(eval(json.dumps(i,cls=DecimalEncoder))["year"])==months_and_year[2][1]:
+            total_bill_for_last_3_months[2] += int(eval(json.dumps(i,cls=DecimalEncoder))["amount"])
+    if total_bill_for_last_3_months.count(0)>=2:
+        results = {'project-next-month-bill-forecast' : 'There is not enough data for this project to forecast' }
+    elif total_bill_for_last_3_months.count(0)==1:
+        total_bill_for_last_3_months.remove(0)
+        average_bill = round(sum(total_bill_for_last_3_months)/len(total_bill_for_last_3_months))
+        results = {'bill-forecast-result': 'Your forecast bill for next month is Rs.{}'.format(average_bill)}
+    elif total_bill_for_last_3_months.count(0)==0:
+        average_bill = round(sum(total_bill_for_last_3_months)/len(total_bill_for_last_3_months))
+        results = {'bill-forecast-result': 'Your forecast bill for next month is Rs.{}'.format(average_bill)}    
+    return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+    
+        
 ######################################### MAIN LAMBDA FUNCTION BEGINS HERE ###################################
 def lambda_handler(event, context):
     # Endpoint for get requests  
@@ -2964,6 +3125,16 @@ def lambda_handler(event, context):
             # Modified version of api bill-api-with-minimum where everything is listed inside a array instead of dictionary
             # With start date and end date 
             return bill_api_with_minimum_v3(event)
+        elif event['queryStringParameters']['function']=='water-meter-consumption-forecast-project':
+            # Project level consumption forecast function
+            return water_meter_consumption_forecast_project(event)
+        elif event['queryStringParameters']['function']=='demo-publish':
+            # demo publish api
+            return demo_publish(event)
+        elif event['queryStringParameters']['function']=='bills-forecast-project':
+            # forecast bills project level
+            return bills_forecast_project(event)
+        
             
 
     # Endpoint for post requests   
@@ -3072,5 +3243,11 @@ def lambda_handler(event, context):
             return water_meter_billing_graph(event)
         elif event['queryStringParameters']['function']=='water-meter-bill-by-month':
             # water meter app billing page by month in history
-            return water_meter_bill_by_month(event)        
+            return water_meter_bill_by_month(event)
+        elif event['queryStringParameters']['function']=='water-meter-consumption-forecast':
+            # water meter consumption forecast
+            return water_meter_consumption_forecast_user(event)
+        elif event['queryStringParameters']['function']=='bills-forecast-user':
+            # bill forecast user level based on last 3 months
+            return bills_forecast_user(event)    
 ###################################### MAIN LAMBDA ENDS HERE ############################################           
