@@ -2513,7 +2513,7 @@ def water_meter_month_graph(event):
         i['y'] = round(i['y']/1000)
     return {'statusCode':200,'body':json.dumps(monthly_graph),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
 
-def water_meter_last_year_consumption(event):
+def water_meter_year_consumption_month_wise(event):
     now = datetime.now() + timedelta(minutes=330)
     results = {'data':[{'x':'Jan','y':0},{'x':'Feb','y':0},{'x':'Mar','y':0},{'x':'Apr','y':0},{'x':'May','y':0},{'x':'Jun','y':0},{'x':'Jul','y':0},{'x':'Aug','y':0},{'x':'Sep','y':0},{'x':'Oct','y':0},{'x':'Nov','y':0},{'x':'Dec','y':0}]}
     #map_array = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -2535,8 +2535,6 @@ def water_meter_last_year_consumption(event):
     for i in results['data']:
         i['y'] = round(i['y']/1000)
     return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
-
-
 
 def water_meter_consumption_split(event):
     now  = datetime.now() + timedelta(minutes=330)
@@ -2917,7 +2915,44 @@ def bills_forecast_project(event):
         results = {'bill-forecast-result': 'Your forecast bill for next month is Rs.{}'.format(average_bill)}    
     return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
     
-        
+def top_least_consumption_months(event):
+    now = datetime.now() + timedelta(minutes=330)
+    results = {'data':[{'x':'Jan','y':0},{'x':'Feb','y':0},{'x':'Mar','y':0},{'x':'Apr','y':0},{'x':'May','y':0},{'x':'Jun','y':0},{'x':'Jul','y':0},{'x':'Aug','y':0},{'x':'Sep','y':0},{'x':'Oct','y':0},{'x':'Nov','y':0},{'x':'Dec','y':0}]}
+    month_wise_consumption_list = []
+    final_results = {'data':[]}
+    #map_array = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    wing = event['queryStringParameters']['wing']
+    flat = event['queryStringParameters']['flat']
+    start_epoch =  int(datetime(now.year,1,1,0,0,0).timestamp())-19800
+    end_epoch = int(datetime(now.year,12,31,11,59,59).timestamp())-19800
+    dynamodb = boto3.resource('dynamodb', region_name='ap-south-1')
+    table = dynamodb.Table('project_wing_device_data')
+    response = table.query(KeyConditionExpression=Key('wing').eq(wing) & Key('flat').eq(flat))
+    for i in response['Items']:
+        dict1 = eval(json.dumps(i,cls=DecimalEncoder))
+    del dict1['limit'],dict1['wing'],dict1['flat'],dict1['project']    
+    for keys,value in dict1.items():
+        table1 = dynamodb.Table('dev-water-meter-python-backend')
+        resp = table1.query(KeyConditionExpression=Key('device_id').eq(value['id']) & Key('timestamp').between(start_epoch,end_epoch))
+        for i in resp['Items']:
+            results['data'][int(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(eval(json.dumps(i,cls=DecimalEncoder))["timestamp"]+19800))[5:7])-1]['y'] += eval(json.dumps(i,cls=DecimalEncoder))["consumption"]
+    for i in range(len(results['data'])):
+        results['data'][i]['y'] = int(round(results['data'][i]['y']/1000))
+        if results['data'][i]['y'] !=0:
+            month_wise_consumption_list.append(results['data'][i]['y'])
+    print(month_wise_consumption_list)        
+    if len(month_wise_consumption_list)==0:
+        final_results['data'].append('Insufficient Service Usage')
+    else:
+        month_wise_consumption_list.sort()
+        for i in month_wise_consumption_list:
+            for j in results['data']:
+                if i==j['y']:
+                    final_results['data'].append({'month':j['x'],'consumption':i})     
+    return {'statusCode':200,'body':json.dumps(final_results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+
+
+
 ######################################### MAIN LAMBDA FUNCTION BEGINS HERE ###################################
 def lambda_handler(event, context):
     # Endpoint for get requests  
@@ -3226,9 +3261,9 @@ def lambda_handler(event, context):
         elif event['queryStringParameters']['function']=='water-meter-month-graph':
             # consumption reports month wise for mobile app users 
             return water_meter_month_graph(event)
-        elif event['queryStringParameters']['function']=='water-meter-last-year-consumption':
+        elif event['queryStringParameters']['function']=='water-meter-year-consumption-month-wise':
             # water meter new page code
-            return water_meter_last_year_consumption(event)   
+            return water_meter_year_consumption_month_wise(event)   
         elif event['queryStringParameters']['function']=='water-meter-consumption-split':
             # water meter app page code
             return water_meter_consumption_split(event)
@@ -3249,5 +3284,9 @@ def lambda_handler(event, context):
             return water_meter_consumption_forecast_user(event)
         elif event['queryStringParameters']['function']=='bills-forecast-user':
             # bill forecast user level based on last 3 months
-            return bills_forecast_user(event)    
+            return bills_forecast_user(event) 
+        elif event['queryStringParameters']['function']=='top-least-consumption-months':
+            # gets top 5 least consumption months of current year for a particular user
+            return top_least_consumption_months(event)     
+
 ###################################### MAIN LAMBDA ENDS HERE ############################################           
