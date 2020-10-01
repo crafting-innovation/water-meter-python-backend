@@ -9,7 +9,8 @@ import botocore
 import calendar
 from json import dumps
 from fpdf import FPDF
-import paho.mqtt.client as paho
+import paho.mqtt.client as mqtt
+import time
 # Design get and post methods for all six services to show data
 # from db and post data to db from sensor endpoints 
 # Post request will have IAM roles None in API gateway
@@ -2853,25 +2854,34 @@ def bills_forecast_user(event):
         results = {'bill-forecast-result': 'Your forecast bill for current month is Rs.{}'.format(average_bill)}
     return {'statusCode':200,'body':json.dumps(results),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
 def demo_publish(event):
-    status  = event['queryStringParameters']['status']
+    status  = str(event['queryStringParameters']['status'])
+    topic = event['queryStringParameters']['topic']
     # Your broker address 
-    broker="18.218.171.32"
-    # default port for broker to listen to incoming messages can be configured in MQTT settings.
-    port=1883
-    def on_publish(client,userdata,result):
-        print("data published \n")
-        pass
-    try:
-        client1= paho.Client("Zenlightin")  
-        client1.on_publish = on_publish
-    except Exception as e:
-        print(str(e))
-    # connection with the mqtt broker address
-    client1.connect(broker,port)
-    # Publish the message using the client 
-    ret= client1.publish("Zenlightin",str(status))
+    broker="b-9727a950-b5c4-453f-a30a-31729f224886-1.mq.ap-south-1.amazonaws.com"
+    # Port for broker to listen to incoming messages can be configured in MQTT settings.
+    port=8883
+    def on_connect(cliebt,userdata,flags,rc):
+        if rc==0:
+            print("OK CONNECTED")
+            ret = client.publish(topic,status)
+        else:
+            return {'statusCode':400,'body':json.dumps('Cannot Connect with the broker'),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
+    # Instantiating a client object
+    client = mqtt.Client("python1")
+    # Binding the on_connect callback function
+    client.on_connect = on_connect
+    # Setting the username and password of broker to connect 
+    client.username_pw_set('testbroker', password='testbroker@123')
+    # Enable SSL connection 
+    client.tls_set()
+    # Connect with the broker
+    client.connect(broker,port)
+    client.loop_start()
+    time.sleep(1)
+    client.loop_stop()
+    client.disconnect()
     return {'statusCode':200,'body':json.dumps('data published'),'headers': {'Access-Control-Allow-Origin': '*','Access-Control-Allow-Credentials': True}}
-
+    
 def bills_forecast_project(event):
     now  = datetime.now() + timedelta(minutes=330)
     project = event['queryStringParameters']['project']
